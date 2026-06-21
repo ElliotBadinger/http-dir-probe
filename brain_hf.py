@@ -234,11 +234,12 @@ class Handler(BaseHTTPRequestHandler):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
-    _load_cidrs()
-
     # HF Dataset persistence thread
-    t = threading.Thread(target=_push_to_dataset, daemon=True)
-    t.start()
+    threading.Thread(target=_push_to_dataset, daemon=True).start()
+
+    # Load CIDRs in background so HTTP server starts immediately
+    # (HF readiness probe must get 200 before marking Space as RUNNING)
+    threading.Thread(target=_load_cidrs, daemon=True).start()
 
     # Periodic stats
     def _stat_loop():
@@ -251,7 +252,7 @@ def main():
     threading.Thread(target=_stat_loop, daemon=True).start()
 
     server = HTTPServer(("0.0.0.0", PORT), Handler)
-    _log(f"brain listening on :{PORT}  queue={_job_q.qsize()}")
+    _log(f"brain listening on :{PORT}")
     server.serve_forever()
 
 if __name__ == "__main__":
