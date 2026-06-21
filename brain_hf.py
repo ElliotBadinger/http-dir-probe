@@ -165,8 +165,10 @@ class Handler(BaseHTTPRequestHandler):
 
         elif p.path == "/job":
             budget = int(qs.get("budget", ["50000"])[0])
+            worker_id = qs.get("worker", [self.headers.get("X-Worker-Id", "?")])[0]
             batch, ip_sum = [], 0
             with _lock:
+                _stats["workers_seen"].add(worker_id)
                 while ip_sum < budget:
                     try:
                         cidr = _job_q.get_nowait()

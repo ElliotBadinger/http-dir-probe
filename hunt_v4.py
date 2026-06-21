@@ -288,7 +288,7 @@ async def probe(ip: str, port: int, sem: asyncio.Semaphore,
 
 # ── Brain client helpers ──────────────────────────────────────────────────────
 import socket as _socket
-WORKER_ID = _socket.gethostname()
+WORKER_ID = os.environ.get("WORKER_ID", _socket.gethostname())
 
 def _brain_get(brain_url: str, path: str) -> dict:
     import urllib.request
@@ -373,7 +373,7 @@ async def main() -> None:
         globals()["save_atomic"] = save_and_report
 
         while True:
-            resp = _brain_get(args.brain, f"/job?budget={args.budget}")
+            resp = _brain_get(args.brain, f"/job?budget={args.budget}&worker={WORKER_ID}")
             cidrs = resp.get("cidrs", [])
             if not cidrs:
                 log("Queue empty — done")
