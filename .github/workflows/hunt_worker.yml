@@ -1,0 +1,52 @@
+name: hunt-worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      brain_url:
+        description: Brain URL (e.g. https://user-hunt-brain.hf.space)
+        required: true
+        type: string
+      workers:
+        description: Asyncio workers per process
+        required: false
+        default: "800"
+        type: string
+      budget:
+        description: IPs per job batch
+        required: false
+        default: "300000"
+        type: string
+  schedule:
+    # Restart 3 parallel workers every 5.5h (under 6h timeout)
+    - cron: "0 */5 * * *"
+
+jobs:
+  worker:
+    name: hunt-worker-${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run scanner
+        env:
+          BRAIN_URL: ${{ inputs.brain_url || vars.BRAIN_URL }}
+          WORKERS:   ${{ inputs.workers || '800' }}
+          BUDGET:    ${{ inputs.budget || '300000' }}
+          WORKER_ID: "gh-${{ github.run_id }}-s${{ matrix.shard }}"
+        run: |
+          python3 hunt_v4.py \
+            --brain   "$BRAIN_URL" \
+            --workers "$WORKERS" \
+            --budget  "$BUDGET"
