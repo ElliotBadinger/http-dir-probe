@@ -64,14 +64,20 @@ if __name__ == "__main__":
         print("Deployed. Trigger with: python3 beam_worker.py --run <brain_url> --count N")
 
     elif args.run:
+        import urllib.request, json as _json, os as _os
         brain_url = args.run.rstrip("/")
+        endpoint  = "https://hunt-worker-cacd526-v1.app.beam.cloud"
+        token     = _os.environ.get("BEAM_TOKEN", "")
+        payload   = _json.dumps({"brain_url": brain_url, "budget": args.budget,
+                                  "workers": args.workers}).encode()
         print(f"Launching {args.count} workers → {brain_url}")
-        futures = [
-            run_scanner.spawn(brain_url=brain_url, budget=args.budget, workers=args.workers)
-            for _ in range(args.count)
-        ]
-        print(f"Spawned {len(futures)} workers. Results stream to brain.")
-        # Don't block — workers POST results back to brain independently
+        for i in range(args.count):
+            req = urllib.request.Request(endpoint, data=payload, method="POST",
+                headers={"Authorization": f"Bearer {token}",
+                         "Content-Type": "application/json"})
+            resp = _json.loads(urllib.request.urlopen(req, timeout=15).read())
+            print(f"  worker {i+1}: task_id={resp.get('task_id','?')}")
+        print("All workers launched — results POST back to brain.")
 
     else:
         parser.print_help()
