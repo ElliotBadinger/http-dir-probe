@@ -4,21 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       brain_url:
-        description: Brain URL (e.g. https://user-hunt-brain.hf.space)
-        required: true
+        description: "Brain URL"
+        required: false
+        default: ""
         type: string
       workers:
-        description: Asyncio workers per process
+        description: "Asyncio workers per process"
         required: false
-        default: "800"
+        default: "600"
         type: string
       budget:
-        description: IPs per job batch
+        description: "IPs per job batch"
         required: false
         default: "300000"
         type: string
   schedule:
-    # Restart 3 parallel workers every 5.5h (under 6h timeout)
     - cron: "0 */5 * * *"
 
 jobs:
@@ -42,10 +42,11 @@ jobs:
       - name: Run scanner
         env:
           BRAIN_URL: ${{ inputs.brain_url || vars.BRAIN_URL }}
-          WORKERS:   ${{ inputs.workers || '800' }}
+          WORKERS:   ${{ inputs.workers || '600' }}
           BUDGET:    ${{ inputs.budget || '300000' }}
           WORKER_ID: "gh-${{ github.run_id }}-s${{ matrix.shard }}"
         run: |
+          echo "Brain: $BRAIN_URL  Workers: $WORKERS  Budget: $BUDGET"
           python3 hunt_v4.py \
             --brain   "$BRAIN_URL" \
             --workers "$WORKERS" \
