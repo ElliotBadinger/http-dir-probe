@@ -85,17 +85,20 @@ def _push_to_dataset():
         try:
             content = FOUND_FILE.read_bytes()
             b64 = base64.b64encode(content).decode()
-            repo_id = HF_DATASET
-            # HF Hub raw file commit API
-            url = f"https://huggingface.co/api/datasets/{repo_id}/raw/main/found.jsonl"
+            # HF Hub commit API (POST with JSON body)
+            url = f"https://huggingface.co/api/datasets/{HF_DATASET}/commit/main"
+            payload = json.dumps({
+                "files": [{"path": "found.jsonl", "content": b64, "encoding": "base64"}],
+                "commit_message": "update found.jsonl",
+            }).encode()
             req = urllib.request.Request(
                 url,
-                data=content,
+                data=payload,
                 headers={
                     "Authorization": f"Bearer {HF_TOKEN}",
-                    "Content-Type": "application/octet-stream",
+                    "Content-Type": "application/json",
                 },
-                method="PUT",
+                method="POST",
             )
             resp = urllib.request.urlopen(req, timeout=30)
             _log(f"HF Dataset push: {resp.status} ({len(content)} bytes)")
