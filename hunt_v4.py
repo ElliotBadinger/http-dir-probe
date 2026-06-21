@@ -124,7 +124,7 @@ def p_home(listing_bytes: bytes, server_header: str, port: int) -> float:
     return _sigmoid(score)
 
 # ── I/O helpers ───────────────────────────────────────────────────────────────
-OUT_DIR  = pathlib.Path("/home/boxd/hunt-v4")
+OUT_DIR  = pathlib.Path(os.environ.get("HUNT_OUT_DIR", "/tmp/hunt-v4"))
 RESULTS  = OUT_DIR / "found.jsonl"
 LOG_FILE = OUT_DIR / "run.log"
 CKPT     = OUT_DIR / "checkpoint.json"
